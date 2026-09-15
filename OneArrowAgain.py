@@ -47,12 +47,38 @@ arrows = [
 current_level = 1
 mistakes_left = 3
 
+# 当前被点击的箭头
+selected_arrow = None
+
 # 游戏界面状态
 START = "start"
 PLAYING = "playing"
 RESULT = "result"
 
 game_state = START
+
+def get_clicked_arrow(mouse_pos):
+    """根据鼠标位置查找被点击的箭头"""
+    mouse_x, mouse_y = mouse_pos
+
+    # 判断鼠标是否位于棋盘范围内
+    if not (
+        BOARD_X <= mouse_x < BOARD_X + BOARD_WIDTH
+        and BOARD_Y <= mouse_y < BOARD_Y + BOARD_HEIGHT
+    ):
+        return None
+
+    # 将鼠标坐标换算成棋盘行列
+    col = (mouse_x - BOARD_X) // CELL_SIZE
+    row = (mouse_y - BOARD_Y) // CELL_SIZE
+
+    # 查找该格子中是否存在箭头
+    for arrow in arrows:
+        if arrow["row"] == row and arrow["col"] == col:
+            return arrow
+
+    return None
+
 
 def draw_arrow(arrow):
     """根据行、列和方向绘制箭头"""
@@ -93,7 +119,11 @@ def draw_arrow(arrow):
     right_x = base_x - perpendicular_x * 11
     right_y = base_y - perpendicular_y * 11
 
-    arrow_color = (45, 95, 150)
+    # 被选中的箭头显示为橙色
+    if arrow is selected_arrow:
+        arrow_color = (240, 140, 50)
+    else:
+        arrow_color = (45, 95, 150)
 
     pygame.draw.line(
         screen,
@@ -226,12 +256,23 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        # 鼠标左键点击
+               # 鼠标左键点击
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 if game_state == START:
                     if start_button.collidepoint(event.pos):
                         game_state = PLAYING
+
+                elif game_state == PLAYING:
+                    selected_arrow = get_clicked_arrow(event.pos)
+
+                    if selected_arrow is not None:
+                        print(
+                            "点击箭头：",
+                            selected_arrow["row"],
+                            selected_arrow["col"],
+                            selected_arrow["direction"]
+                        )
 
     # 根据当前状态绘制不同界面
     if game_state == START:
