@@ -1,5 +1,7 @@
 import pygame
 import sys
+
+from game_logic import is_blocked
 # 初始化 Pygame
 pygame.init()
 
@@ -42,6 +44,7 @@ arrows = [
     {"row": 3, "col": 2, "direction": "DOWN"},
     {"row": 4, "col": 0, "direction": "LEFT"},
     {"row": 5, "col": 5, "direction": "RIGHT"},
+    {"row": 3, "col": 4, "direction": "LEFT"},
 ]
 
 current_level = 1
@@ -267,11 +270,15 @@ while running:
                     selected_arrow = get_clicked_arrow(event.pos)
 
                     if selected_arrow is not None:
+                        blocked = is_blocked(selected_arrow, arrows)
+
                         print(
                             "点击箭头：",
                             selected_arrow["row"],
                             selected_arrow["col"],
-                            selected_arrow["direction"]
+                            selected_arrow["direction"],
+                            "是否阻挡：",
+                            blocked
                         )
 
     # 根据当前状态绘制不同界面
