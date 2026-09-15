@@ -64,10 +64,12 @@ python OneArrowAgain.py
 
 ```text
 OneArrowAgain/
-├── OneArrowAgain.py       # 游戏主程序
-├── requirements.txt       # 项目依赖
+├── OneArrowAgain.py       # 游戏界面、绘制和事件处理
+├── game_logic.py          # 箭头路径和阻挡判断
+├── requirements.txt       # Python依赖
 ├── README.md              # 项目说明
 ├── .gitignore             # Git忽略配置
+├── .gitattributes         # Git文本文件配置
 ├── OneArrowAgain.pyproj   # Visual Studio项目文件
 └── OneArrowAgain.slnx     # Visual Studio解决方案文件
 ```
