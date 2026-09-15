@@ -25,12 +25,93 @@ start_button = pygame.Rect(
     70
 )
 
+# 棋盘设置
+ROWS = 6
+COLS = 6
+CELL_SIZE = 70
+
+BOARD_WIDTH = COLS * CELL_SIZE
+BOARD_HEIGHT = ROWS * CELL_SIZE
+BOARD_X = (WIDTH - BOARD_WIDTH) // 2
+BOARD_Y = 160
+
+# 临时关卡数据：行、列、方向
+arrows = [
+    {"row": 0, "col": 1, "direction": "UP"},
+    {"row": 1, "col": 4, "direction": "RIGHT"},
+    {"row": 3, "col": 2, "direction": "DOWN"},
+    {"row": 4, "col": 0, "direction": "LEFT"},
+    {"row": 5, "col": 5, "direction": "RIGHT"},
+]
+
+current_level = 1
+mistakes_left = 3
+
 # 游戏界面状态
 START = "start"
 PLAYING = "playing"
 RESULT = "result"
 
 game_state = START
+
+def draw_arrow(arrow):
+    """根据行、列和方向绘制箭头"""
+    row = arrow["row"]
+    col = arrow["col"]
+    direction = arrow["direction"]
+
+    center_x = BOARD_X + col * CELL_SIZE + CELL_SIZE // 2
+    center_y = BOARD_Y + row * CELL_SIZE + CELL_SIZE // 2
+
+    direction_vectors = {
+        "UP": (0, -1),
+        "DOWN": (0, 1),
+        "LEFT": (-1, 0),
+        "RIGHT": (1, 0)
+    }
+
+    dx, dy = direction_vectors[direction]
+
+    # 箭杆起点和箭头尖端
+    tail_x = center_x - dx * 20
+    tail_y = center_y - dy * 20
+
+    tip_x = center_x + dx * 24
+    tip_y = center_y + dy * 24
+
+    # 箭头三角形底部的中心
+    base_x = center_x + dx * 8
+    base_y = center_y + dy * 8
+
+    # 与箭头方向垂直的向量
+    perpendicular_x = -dy
+    perpendicular_y = dx
+
+    left_x = base_x + perpendicular_x * 11
+    left_y = base_y + perpendicular_y * 11
+
+    right_x = base_x - perpendicular_x * 11
+    right_y = base_y - perpendicular_y * 11
+
+    arrow_color = (45, 95, 150)
+
+    pygame.draw.line(
+        screen,
+        arrow_color,
+        (tail_x, tail_y),
+        (base_x, base_y),
+        7
+    )
+
+    pygame.draw.polygon(
+        screen,
+        arrow_color,
+        [
+            (tip_x, tip_y),
+            (left_x, left_y),
+            (right_x, right_y)
+        ]
+    )
 
 
 def draw_start_screen():
@@ -79,6 +160,57 @@ def draw_start_screen():
 def draw_game_screen():
     """绘制游戏界面"""
     screen.fill((245, 242, 235))
+
+    # 显示关卡信息
+    level_text = button_font.render(
+        f"第 {current_level} 关",
+        True,
+        (45, 65, 85)
+    )
+    screen.blit(level_text, (60, 45))
+
+    remaining_text = button_font.render(
+        f"剩余箭头：{len(arrows)}",
+        True,
+        (45, 65, 85)
+    )
+    screen.blit(remaining_text, (330, 45))
+
+    mistake_text = button_font.render(
+        f"剩余失误：{mistakes_left}",
+        True,
+        (190, 70, 70)
+    )
+    screen.blit(mistake_text, (630, 45))
+
+    # 绘制棋盘背景
+    pygame.draw.rect(
+        screen,
+        (255, 255, 255),
+        (BOARD_X, BOARD_Y, BOARD_WIDTH, BOARD_HEIGHT),
+        border_radius=8
+    )
+
+    # 绘制棋盘格
+    for row in range(ROWS):
+        for col in range(COLS):
+            cell_rect = pygame.Rect(
+                BOARD_X + col * CELL_SIZE,
+                BOARD_Y + row * CELL_SIZE,
+                CELL_SIZE,
+                CELL_SIZE
+            )
+
+            pygame.draw.rect(
+                screen,
+                (190, 200, 210),
+                cell_rect,
+                1
+            )
+
+    # 绘制全部箭头
+    for arrow in arrows:
+        draw_arrow(arrow)
 
 
 def draw_result_screen():
