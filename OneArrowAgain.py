@@ -75,11 +75,73 @@ game_state = START
 # None表示尚无结果，clear表示通关，failed表示失败
 result_kind = None
 
+# 飞出动画状态
+FLIGHT_SPEED = 700  # 每秒移动700像素
+flying_arrow = None
+flight_offset_x = 0.0
+flight_offset_y = 0.0
+
+
+def update_flight(dt):
+    """移动箭头，完全离开棋盘后删除"""
+    global flying_arrow, flight_offset_x, flight_offset_y
+    global game_state, result_kind
+
+    if flying_arrow is None:
+        return
+
+    direction_vectors = {
+        "UP": (0, -1),
+        "DOWN": (0, 1),
+        "LEFT": (-1, 0),
+        "RIGHT": (1, 0)
+    }
+
+    dx, dy = direction_vectors[flying_arrow["direction"]]
+
+    flight_offset_x += dx * FLIGHT_SPEED * dt
+    flight_offset_y += dy * FLIGHT_SPEED * dt
+
+    center_x = (
+        BOARD_X
+        + flying_arrow["col"] * CELL_SIZE
+        + CELL_SIZE // 2
+        + flight_offset_x
+    )
+    center_y = (
+        BOARD_Y
+        + flying_arrow["row"] * CELL_SIZE
+        + CELL_SIZE // 2
+        + flight_offset_y
+    )
+
+    # 留出30像素，确保整个箭头已经离开棋盘
+    outside = (
+        center_x < BOARD_X - 30
+        or center_x > BOARD_X + BOARD_WIDTH + 30
+        or center_y < BOARD_Y - 30
+        or center_y > BOARD_Y + BOARD_HEIGHT + 30
+    )
+
+    if outside:
+        arrows.remove(flying_arrow)
+        flying_arrow = None
+        flight_offset_x = 0.0
+        flight_offset_y = 0.0
+
+        # 最后一个箭头飞出后才显示通关
+        if not arrows:
+            result_kind = "clear"
+            game_state = RESULT
+
+
+
 def restart_level():
     """从关卡数据中恢复当前关卡"""
     global arrows, mistakes_left, selected_arrow
     global collision_arrow, collision_until, game_state
     global result_kind
+    global flying_arrow, flight_offset_x, flight_offset_y
 
     level = LEVELS[current_level - 1]
 
@@ -89,6 +151,12 @@ def restart_level():
     collision_arrow = None
     collision_until = 0
     result_kind = None
+
+    # 清除尚未结束的动画
+    flying_arrow = None
+    flight_offset_x = 0.0
+    flight_offset_y = 0.0
+
     game_state = PLAYING
 
 
@@ -140,14 +208,18 @@ def get_clicked_arrow(mouse_pos):
     return None
 
 
-def draw_arrow(arrow):
+def draw_arrow(arrow, offset_x=0, offset_y=0):
     """根据行、列和方向绘制箭头"""
     row = arrow["row"]
     col = arrow["col"]
     direction = arrow["direction"]
 
-    center_x = BOARD_X + col * CELL_SIZE + CELL_SIZE // 2
-    center_y = BOARD_Y + row * CELL_SIZE + CELL_SIZE // 2
+    center_x = int(
+        BOARD_X + col * CELL_SIZE + CELL_SIZE // 2 + offset_x
+    )
+    center_y = int(
+        BOARD_Y + row * CELL_SIZE + CELL_SIZE // 2 + offset_y
+    )
 
     direction_vectors = {
         "UP": (0, -1),
@@ -302,9 +374,12 @@ def draw_game_screen():
                 1
             )
 
-        # 绘制全部箭头
+    # 绘制全部箭头
     for arrow in arrows:
-        draw_arrow(arrow)
+        if arrow is flying_arrow:
+            draw_arrow(arrow, flight_offset_x, flight_offset_y)
+        else:
+            draw_arrow(arrow)
 
     draw_restart_button()
 
@@ -356,6 +431,9 @@ def draw_result_screen():
 running = True
 
 while running:
+    dt = min(clock.tick(FPS) / 1000.0, 0.05)
+
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -378,6 +456,10 @@ while running:
                 restart_level()
                 continue
 
+            # 动画期间只允许重新开始
+            if flying_arrow is not None:
+                continue
+
             selected_arrow = get_clicked_arrow(event.pos)
 
             # 点击空白处时不进行箭头处理
@@ -395,12 +477,10 @@ while running:
                     result_kind = "failed"
                     game_state = RESULT
             else:
-                arrows.remove(selected_arrow)
-
-                # 全部箭头清除后进入通关界面
-                if not arrows:
-                    result_kind = "clear"
-                    game_state = RESULT
+                # 开始飞出动画，暂时不删除箭头
+                flying_arrow = selected_arrow
+                flight_offset_x = 0.0
+                flight_offset_y = 0.0
 
             selected_arrow = None
 
@@ -415,6 +495,10 @@ while running:
 
                 restart_level()
 
+    # 更新成功箭头的飞出动画
+    if game_state == PLAYING:
+        update_flight(dt)
+
     # 根据当前状态绘制不同界面
     if game_state == START:
         draw_start_screen()
@@ -424,7 +508,6 @@ while running:
         draw_result_screen()
 
     pygame.display.flip()
-    clock.tick(FPS)
 
 pygame.quit()
 sys.exit()
