@@ -101,20 +101,20 @@ OneArrowAgain/
 
 ### 开始界面
 
-![开始界面](assets/screenshots/start.png)
+![开始界面](assets/screenshot/start.png)
 
 ### 游戏界面
 
-![游戏界面1](assets/screenshots/level1.png)
-![游戏界面2](assets/screenshots/level3.png)
+![游戏界面1](assets/screenshot/level1.png)
+![游戏界面2](assets/screenshot/level3.png)
 
 ### 通关界面
 
-![通关界面](assets/screenshots/clear.png)
+![通关界面](assets/screenshot/clear.png)
 
 ### 失败界面
 
-![失败界面](assets/screenshots/failed.png)
+![失败界面](assets/screenshot/failed.png)
 
 ## 测试计划
 
