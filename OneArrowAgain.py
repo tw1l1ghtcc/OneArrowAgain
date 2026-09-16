@@ -2,6 +2,7 @@ import pygame
 import sys
 
 from game_logic import is_blocked
+from levels import LEVELS
 # 初始化 Pygame
 pygame.init()
 
@@ -46,22 +47,16 @@ BOARD_HEIGHT = ROWS * CELL_SIZE
 BOARD_X = (WIDTH - BOARD_WIDTH) // 2
 BOARD_Y = 160
 
-# 临时关卡数据：行、列、方向
+# 当前关卡编号从1开始
+current_level = 1
+
+# 创建当前关卡的游戏数据副本
 arrows = [
-    {"row": 0, "col": 1, "direction": "UP"},
-    {"row": 1, "col": 4, "direction": "RIGHT"},
-    {"row": 3, "col": 2, "direction": "DOWN"},
-    {"row": 4, "col": 0, "direction": "LEFT"},
-    {"row": 5, "col": 5, "direction": "RIGHT"},
-    {"row": 3, "col": 4, "direction": "LEFT"},
+    arrow.copy()
+    for arrow in LEVELS[current_level - 1]["arrows"]
 ]
 
-# 保存初始布局，重新开始时使用
-initial_arrows = [arrow.copy() for arrow in arrows]
-
-
-current_level = 1
-mistakes_left = 3
+mistakes_left = LEVELS[current_level - 1]["mistakes"]
 
 # 当前被点击的箭头
 selected_arrow = None
@@ -78,12 +73,14 @@ RESULT = "result"
 game_state = START
 
 def restart_level():
-    """恢复当前关卡的初始状态"""
+    """从关卡数据中恢复当前关卡"""
     global arrows, mistakes_left, selected_arrow
     global collision_arrow, collision_until, game_state
 
-    arrows = [arrow.copy() for arrow in initial_arrows]
-    mistakes_left = 3
+    level = LEVELS[current_level - 1]
+
+    arrows = [arrow.copy() for arrow in level["arrows"]]
+    mistakes_left = level["mistakes"]
     selected_arrow = None
     collision_arrow = None
     collision_until = 0

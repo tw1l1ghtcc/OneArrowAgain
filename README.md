@@ -66,6 +66,7 @@ python OneArrowAgain.py
 OneArrowAgain/
 ├── OneArrowAgain.py       # 游戏界面、绘制和事件处理
 ├── game_logic.py          # 箭头路径和阻挡判断
+├── levels.py             # 三个关卡的数据
 ├── requirements.txt       # Python依赖
 ├── README.md              # 项目说明
 ├── .gitignore             # Git忽略配置
