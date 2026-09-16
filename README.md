@@ -70,6 +70,8 @@ OneArrowAgain/
 ├── TESTING.md             # 手工测试和关卡试玩记录
 ├── requirements.txt       # Python依赖
 ├── README.md              # 项目说明
+├── assets/
+│   └── screenshots/      # 游戏截图
 ├── .gitignore             # Git忽略配置
 ├── .gitattributes         # Git文本文件配置
 ├── OneArrowAgain.pyproj   # Visual Studio项目文件
@@ -93,17 +95,26 @@ OneArrowAgain/
 - [x] 完成至少三个可通关关卡
 - [x] 完成通关、失败和重新开始功能
 - [x] 完成基础功能手工测试
-- [ ] 添加游戏截图
+- [x] 添加游戏截图
 
 ## 游戏截图
 
-游戏截图将在主要功能完成后添加。
+### 开始界面
 
-<!-- 示例：
 ![开始界面](assets/screenshots/start.png)
-![游戏界面](assets/screenshots/game.png)
-![通关界面](assets/screenshots/result.png)
--->
+
+### 游戏界面
+
+![游戏界面1](assets/screenshots/level1.png)
+![游戏界面2](assets/screenshots/level3.png)
+
+### 通关界面
+
+![通关界面](assets/screenshots/clear.png)
+
+### 失败界面
+
+![失败界面](assets/screenshots/failed.png)
 
 ## 测试计划
 
