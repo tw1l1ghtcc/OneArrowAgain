@@ -72,10 +72,14 @@ RESULT = "result"
 
 game_state = START
 
+# None表示尚无结果，clear表示通关，failed表示失败
+result_kind = None
+
 def restart_level():
     """从关卡数据中恢复当前关卡"""
     global arrows, mistakes_left, selected_arrow
     global collision_arrow, collision_until, game_state
+    global result_kind
 
     level = LEVELS[current_level - 1]
 
@@ -84,10 +88,11 @@ def restart_level():
     selected_arrow = None
     collision_arrow = None
     collision_until = 0
+    result_kind = None
     game_state = PLAYING
 
 
-def draw_restart_button():
+def draw_restart_button(label="重新开始"):
     """绘制重新开始按钮"""
     if restart_button.collidepoint(pygame.mouse.get_pos()):
         color = (90, 170, 245)
@@ -102,7 +107,7 @@ def draw_restart_button():
     )
 
     text = button_font.render(
-        "重新开始",
+        label,
         True,
         (255, 255, 255)
     )
@@ -304,13 +309,31 @@ def draw_game_screen():
     draw_restart_button()
 
 def draw_result_screen():
-    """绘制失败界面"""
+    """根据结果显示失败、本关通关或全部通关"""
     screen.fill((230, 240, 235))
 
+    if result_kind == "failed":
+        title_text = "挑战失败"
+        message_text = "失误次数已耗尽，重新挑战吧！"
+        button_text = "重新开始"
+        title_color = (190, 70, 70)
+
+    elif current_level == len(LEVELS):
+        title_text = "全部通关！"
+        message_text = "你已经清除了所有关卡的箭头"
+        button_text = "从第一关再玩"
+        title_color = (45, 150, 95)
+
+    else:
+        title_text = f"第 {current_level} 关通关"
+        message_text = "做得不错，继续挑战下一关吧！"
+        button_text = "下一关"
+        title_color = (45, 150, 95)
+
     title = title_font.render(
-        "挑战失败",
+        title_text,
         True,
-        (190, 70, 70)
+        title_color
     )
     screen.blit(
         title,
@@ -318,7 +341,7 @@ def draw_result_screen():
     )
 
     message = button_font.render(
-        "失误次数已耗尽，重新挑战吧！",
+        message_text,
         True,
         (45, 65, 85)
     )
@@ -327,7 +350,7 @@ def draw_result_screen():
         message.get_rect(center=(WIDTH // 2, 350))
     )
 
-    draw_restart_button()
+    draw_restart_button(button_text)
 
 
 running = True
@@ -368,16 +391,28 @@ while running:
                 collision_arrow = selected_arrow
                 collision_until = pygame.time.get_ticks() + 500
 
-                # 失误耗尽，进入失败界面
                 if mistakes_left == 0:
+                    result_kind = "failed"
                     game_state = RESULT
             else:
                 arrows.remove(selected_arrow)
+
+                # 全部箭头清除后进入通关界面
+                if not arrows:
+                    result_kind = "clear"
+                    game_state = RESULT
 
             selected_arrow = None
 
         elif game_state == RESULT:
             if restart_button.collidepoint(event.pos):
+                if result_kind == "clear":
+                    if current_level < len(LEVELS):
+                        current_level += 1
+                    else:
+                        # 全部通关后从第一关重新玩
+                        current_level = 1
+
                 restart_level()
 
     # 根据当前状态绘制不同界面
