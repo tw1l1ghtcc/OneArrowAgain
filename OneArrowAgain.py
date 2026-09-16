@@ -20,6 +20,8 @@ clock = pygame.time.Clock()
 title_font = pygame.font.SysFont("Microsoft YaHei", 56)
 button_font = pygame.font.SysFont("Microsoft YaHei", 30)
 
+
+info_font = pygame.font.SysFont("Microsoft YaHei", 20)
 # 开始按钮的位置和大小
 start_button = pygame.Rect(
     WIDTH // 2 - 120,
@@ -324,40 +326,87 @@ def draw_start_screen():
 
 
 def draw_game_screen():
-    """绘制游戏界面"""
-    screen.fill((245, 242, 235))
+    """绘制卡片式游戏界面"""
+    screen.fill((239, 244, 250))
 
-    # 显示关卡信息
-    level_text = button_font.render(
-        f"第 {current_level} 关",
+    # 左上角游戏名称
+    heading = info_font.render(
+        "一箭又一箭",
         True,
-        (45, 65, 85)
+        (45, 65, 90)
     )
-    screen.blit(level_text, (60, 45))
+    screen.blit(heading, (40, 16))
 
-    remaining_text = button_font.render(
-        f"剩余箭头：{len(arrows)}",
-        True,
-        (45, 65, 85)
+    # 顶部状态卡片
+    cards = [
+        ("当前关卡", f"{current_level} / {len(LEVELS)}", (65, 115, 205)),
+        ("剩余箭头", str(len(arrows)), (45, 135, 115)),
+        ("剩余失误", str(mistakes_left), (205, 80, 85)),
+    ]
+
+    card_width = 190
+    card_gap = 20
+    total_width = card_width * 3 + card_gap * 2
+    first_x = (WIDTH - total_width) // 2
+
+    for index, (label, value, value_color) in enumerate(cards):
+        card_x = first_x + index * (card_width + card_gap)
+        card_rect = pygame.Rect(card_x, 55, card_width, 70)
+
+        # 卡片阴影
+        pygame.draw.rect(
+            screen,
+            (220, 228, 239),
+            card_rect.move(0, 4),
+            border_radius=14
+        )
+
+        pygame.draw.rect(
+            screen,
+            (255, 255, 255),
+            card_rect,
+            border_radius=14
+        )
+
+        label_image = info_font.render(
+            label,
+            True,
+            (110, 125, 145)
+        )
+        screen.blit(label_image, (card_x + 16, 62))
+
+        value_image = button_font.render(
+            value,
+            True,
+            value_color
+        )
+        screen.blit(value_image, (card_x + 16, 86))
+
+    # 棋盘外框
+    board_card = pygame.Rect(
+        BOARD_X - 10,
+        BOARD_Y - 10,
+        BOARD_WIDTH + 20,
+        BOARD_HEIGHT + 20
     )
-    screen.blit(remaining_text, (330, 45))
 
-    mistake_text = button_font.render(
-        f"剩余失误：{mistakes_left}",
-        True,
-        (190, 70, 70)
+    pygame.draw.rect(
+        screen,
+        (215, 225, 237),
+        board_card.move(0, 5),
+        border_radius=20
     )
-    screen.blit(mistake_text, (630, 45))
 
-    # 绘制棋盘背景
     pygame.draw.rect(
         screen,
         (255, 255, 255),
-        (BOARD_X, BOARD_Y, BOARD_WIDTH, BOARD_HEIGHT),
-        border_radius=8
+        board_card,
+        border_radius=20
     )
 
-    # 绘制棋盘格
+    mouse_pos = pygame.mouse.get_pos()
+
+    # 绘制圆角格子
     for row in range(ROWS):
         for col in range(COLS):
             cell_rect = pygame.Rect(
@@ -367,14 +416,24 @@ def draw_game_screen():
                 CELL_SIZE
             )
 
+            if (row + col) % 2 == 0:
+                cell_color = (242, 247, 253)
+            else:
+                cell_color = (232, 240, 250)
+
+            # 动画期间不显示格子悬停反馈
+            if flying_arrow is None:
+                if cell_rect.collidepoint(mouse_pos):
+                    cell_color = (209, 229, 252)
+
             pygame.draw.rect(
                 screen,
-                (190, 200, 210),
-                cell_rect,
-                1
+                cell_color,
+                cell_rect.inflate(-8, -8),
+                border_radius=12
             )
 
-    # 绘制全部箭头
+    # 保留原有箭头和动画绘制
     for arrow in arrows:
         if arrow is flying_arrow:
             draw_arrow(arrow, flight_offset_x, flight_offset_y)
