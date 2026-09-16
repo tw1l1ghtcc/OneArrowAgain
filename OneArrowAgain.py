@@ -27,6 +27,15 @@ start_button = pygame.Rect(
     70
 )
 
+# 游戏和失败界面的重新开始按钮
+restart_button = pygame.Rect(
+    WIDTH // 2 - 120,
+    610,
+    240,
+    60
+)
+
+
 # 棋盘设置
 ROWS = 6
 COLS = 6
@@ -47,6 +56,10 @@ arrows = [
     {"row": 3, "col": 4, "direction": "LEFT"},
 ]
 
+# 保存初始布局，重新开始时使用
+initial_arrows = [arrow.copy() for arrow in arrows]
+
+
 current_level = 1
 mistakes_left = 3
 
@@ -63,6 +76,44 @@ PLAYING = "playing"
 RESULT = "result"
 
 game_state = START
+
+def restart_level():
+    """恢复当前关卡的初始状态"""
+    global arrows, mistakes_left, selected_arrow
+    global collision_arrow, collision_until, game_state
+
+    arrows = [arrow.copy() for arrow in initial_arrows]
+    mistakes_left = 3
+    selected_arrow = None
+    collision_arrow = None
+    collision_until = 0
+    game_state = PLAYING
+
+
+def draw_restart_button():
+    """绘制重新开始按钮"""
+    if restart_button.collidepoint(pygame.mouse.get_pos()):
+        color = (90, 170, 245)
+    else:
+        color = (70, 150, 230)
+
+    pygame.draw.rect(
+        screen,
+        color,
+        restart_button,
+        border_radius=12
+    )
+
+    text = button_font.render(
+        "重新开始",
+        True,
+        (255, 255, 255)
+    )
+    screen.blit(
+        text,
+        text.get_rect(center=restart_button.center)
+    )
+
 
 def get_clicked_arrow(mouse_pos):
     """根据鼠标位置查找被点击的箭头"""
@@ -249,50 +300,88 @@ def draw_game_screen():
                 1
             )
 
-    # 绘制全部箭头
+        # 绘制全部箭头
     for arrow in arrows:
         draw_arrow(arrow)
 
+    draw_restart_button()
 
 def draw_result_screen():
-    """绘制通关或失败界面"""
+    """绘制失败界面"""
     screen.fill((230, 240, 235))
+
+    title = title_font.render(
+        "挑战失败",
+        True,
+        (190, 70, 70)
+    )
+    screen.blit(
+        title,
+        title.get_rect(center=(WIDTH // 2, 250))
+    )
+
+    message = button_font.render(
+        "失误次数已耗尽，重新挑战吧！",
+        True,
+        (45, 65, 85)
+    )
+    screen.blit(
+        message,
+        message.get_rect(center=(WIDTH // 2, 350))
+    )
+
+    draw_restart_button()
 
 
 running = True
 
 while running:
-    # 处理鼠标、键盘和关闭窗口事件
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+            continue
 
-               # 鼠标左键点击
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                if game_state == START:
-                    if start_button.collidepoint(event.pos):
-                        game_state = PLAYING
+        # 只处理鼠标左键按下事件
+        if event.type != pygame.MOUSEBUTTONDOWN:
+            continue
 
-                elif game_state == PLAYING:
-                    selected_arrow = get_clicked_arrow(event.pos)
+        if event.button != 1:
+            continue
 
-                    if selected_arrow is not None:
-                        blocked = is_blocked(selected_arrow, arrows)
+        if game_state == START:
+            if start_button.collidepoint(event.pos):
+                restart_level()
 
-                        if blocked:
-                            mistakes_left = max(0, mistakes_left - 1)
-                            collision_arrow = selected_arrow
-                            collision_until = pygame.time.get_ticks() + 500
+        elif game_state == PLAYING:
+            # 点击重新开始按钮
+            if restart_button.collidepoint(event.pos):
+                restart_level()
+                continue
 
-                            print("发生碰撞，剩余失误：", mistakes_left)
+            selected_arrow = get_clicked_arrow(event.pos)
 
-                        else:
-                            arrows.remove(selected_arrow)
+            # 点击空白处时不进行箭头处理
+            if selected_arrow is None:
+                continue
 
-                            print("成功消除，剩余箭头：", len(arrows))
+            blocked = is_blocked(selected_arrow, arrows)
 
-                        selected_arrow = None
+            if blocked:
+                mistakes_left = max(0, mistakes_left - 1)
+                collision_arrow = selected_arrow
+                collision_until = pygame.time.get_ticks() + 500
+
+                # 失误耗尽，进入失败界面
+                if mistakes_left == 0:
+                    game_state = RESULT
+            else:
+                arrows.remove(selected_arrow)
+
+            selected_arrow = None
+
+        elif game_state == RESULT:
+            if restart_button.collidepoint(event.pos):
+                restart_level()
 
     # 根据当前状态绘制不同界面
     if game_state == START:
