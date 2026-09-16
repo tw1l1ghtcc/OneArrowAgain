@@ -25,7 +25,7 @@ info_font = pygame.font.SysFont("Microsoft YaHei", 20)
 # 开始按钮的位置和大小
 start_button = pygame.Rect(
     WIDTH // 2 - 120,
-    HEIGHT // 2 + 50,
+    535,
     240,
     70
 )
@@ -163,27 +163,30 @@ def restart_level():
 
 
 def draw_restart_button(label="重新开始"):
-    """绘制重新开始按钮"""
-    if restart_button.collidepoint(pygame.mouse.get_pos()):
-        color = (90, 170, 245)
+    """根据界面结果绘制不同颜色的按钮"""
+    hovered = restart_button.collidepoint(pygame.mouse.get_pos())
+
+    if game_state == RESULT and result_kind == "failed":
+        color = (225, 100, 115) if hovered else (205, 80, 95)
+    elif game_state == RESULT:
+        color = (60, 175, 135) if hovered else (40, 150, 110)
     else:
-        color = (70, 150, 230)
+        color = (90, 155, 240) if hovered else (65, 130, 225)
 
     pygame.draw.rect(
-        screen,
-        color,
-        restart_button,
-        border_radius=12
+        screen, (200, 213, 229),
+        restart_button.move(0, 5),
+        border_radius=15
     )
 
-    text = button_font.render(
-        label,
-        True,
-        (255, 255, 255)
+    pygame.draw.rect(
+        screen, color, restart_button,
+        border_radius=15
     )
-    screen.blit(
-        text,
-        text.get_rect(center=restart_button.center)
+
+    draw_centered_text(
+        label, button_font, (255, 255, 255),
+        restart_button.center
     )
 
 
@@ -281,48 +284,172 @@ def draw_arrow(arrow, offset_x=0, offset_y=0):
         ]
     )
 
+def draw_centered_text(text, font, color, center):
+    """以指定位置为中心绘制文字"""
+    text_image = font.render(text, True, color)
+    screen.blit(
+        text_image,
+        text_image.get_rect(center=center)
+    )
+
+
+def draw_panel(rect):
+    """绘制带阴影的白色圆角卡片"""
+    pygame.draw.rect(
+        screen, (215, 224, 236),
+        rect.move(0, 5),
+        border_radius=22
+    )
+    pygame.draw.rect(
+        screen, (255, 255, 255),
+        rect,
+        border_radius=22
+    )
+
+
+def draw_scene_background(theme="blue"):
+    """绘制渐变背景和装饰图形"""
+    palettes = {
+        "blue": (
+            (246, 249, 255),
+            (226, 237, 253),
+            (202, 220, 244)
+        ),
+        "success": (
+            (245, 252, 248),
+            (225, 244, 235),
+            (194, 226, 211)
+        ),
+        "failed": (
+            (255, 248, 249),
+            (250, 231, 236),
+            (236, 204, 213)
+        )
+    }
+
+    top_color, bottom_color, ornament_color = palettes[theme]
+
+    # 每4像素绘制一条色带，形成渐变
+    for y in range(0, HEIGHT, 4):
+        ratio = y / (HEIGHT - 1)
+        color = tuple(
+            int(top_color[i] * (1 - ratio) + bottom_color[i] * ratio)
+            for i in range(3)
+        )
+        pygame.draw.rect(screen, color, (0, y, WIDTH, 4))
+
+    # 背景圆环
+    pygame.draw.circle(
+        screen, ornament_color, (-20, 100), 145, 3
+    )
+    pygame.draw.circle(
+        screen, ornament_color, (WIDTH - 75, 85), 65, 3
+    )
+    pygame.draw.circle(
+        screen, ornament_color,
+        (WIDTH + 15, HEIGHT - 60), 170, 3
+    )
+
+    # 背景方向符号
+    decorations = [
+        ("↑", (90, 255)),
+        ("→", (805, 365)),
+        ("↓", (120, 590)),
+        ("←", (760, 140))
+    ]
+
+    for symbol, center in decorations:
+        draw_centered_text(
+            symbol, button_font, ornament_color, center
+        )
+
+    for position in [(145, 160), (780, 520), (80, 430), (720, 620)]:
+        pygame.draw.circle(
+            screen, ornament_color, position, 5
+        )
+
 
 def draw_start_screen():
-    """绘制开始界面"""
-    screen.fill((238, 244, 248))
+    """绘制带图标和玩法卡片的开始界面"""
+    draw_scene_background("blue")
 
-    # 绘制游戏标题
-    title_text = title_font.render(
+    draw_centered_text(
         "一箭又一箭",
-        True,
-        (45, 65, 85)
+        title_font,
+        (45, 65, 95),
+        (WIDTH // 2, 130)
     )
-    title_rect = title_text.get_rect(
-        center=(WIDTH // 2, 220)
+
+    draw_centered_text(
+        "观察方向 · 判断阻挡 · 清空棋盘",
+        info_font,
+        (110, 130, 155),
+        (WIDTH // 2, 185)
     )
-    screen.blit(title_text, title_rect)
 
-    # 鼠标放在按钮上时改变颜色
-    mouse_pos = pygame.mouse.get_pos()
+    # 四种方向图标
+    icons = [
+        ("↑", (225, 235, 255), (65, 115, 205)),
+        ("→", (222, 246, 233), (45, 145, 105)),
+        ("↓", (255, 237, 215), (205, 135, 55)),
+        ("←", (240, 227, 255), (145, 100, 190))
+    ]
 
-    if start_button.collidepoint(mouse_pos):
-        button_color = (90, 170, 245)
-    else:
-        button_color = (70, 150, 230)
+    for index, (symbol, background, color) in enumerate(icons):
+        center = (360 + index * 60, 245)
+        pygame.draw.circle(screen, background, center, 28)
 
-    # 绘制开始按钮
+        draw_centered_text(
+            symbol, button_font, color, center
+        )
+
+    # 玩法说明卡片
+    draw_panel(pygame.Rect(190, 315, 520, 185))
+
+    draw_centered_text(
+        "玩法指南",
+        button_font,
+        (50, 75, 105),
+        (WIDTH // 2, 345)
+    )
+
+    instructions = [
+        "01   观察方向：箭头只能沿朝向移动",
+        "02   点击消除：前方没有箭头才能飞出",
+        "03   避开阻挡：每次碰撞扣除一次失误"
+    ]
+
+    for index, text in enumerate(instructions):
+        draw_centered_text(
+            text, info_font, (105, 120, 140),
+            (WIDTH // 2, 390 + index * 35)
+        )
+
+    # 开始按钮阴影和悬停反馈
+    hovered = start_button.collidepoint(pygame.mouse.get_pos())
+    color = (90, 155, 240) if hovered else (65, 130, 225)
+
     pygame.draw.rect(
-        screen,
-        button_color,
-        start_button,
-        border_radius=15
+        screen, (195, 210, 235),
+        start_button.move(0, 5),
+        border_radius=16
+    )
+    pygame.draw.rect(
+        screen, color, start_button,
+        border_radius=16
     )
 
-    # 绘制按钮文字
-    button_text = button_font.render(
-        "开始游戏",
-        True,
-        (255, 255, 255)
+    draw_centered_text(
+        "开始游戏", button_font, (255, 255, 255),
+        start_button.center
     )
-    button_text_rect = button_text.get_rect(
-        center=start_button.center
+
+    draw_centered_text(
+        "3 个关卡  ·  鼠标操作  ·  每关 3 次失误机会",
+        info_font,
+        (125, 140, 160),
+        (WIDTH // 2, 650)
     )
-    screen.blit(button_text, button_text_rect)
 
 
 def draw_game_screen():
@@ -443,45 +570,108 @@ def draw_game_screen():
     draw_restart_button()
 
 def draw_result_screen():
-    """根据结果显示失败、本关通关或全部通关"""
-    screen.fill((230, 240, 235))
+    """绘制丰富的通关或失败界面"""
+    failed = result_kind == "failed"
+    final_level = current_level == len(LEVELS)
 
-    if result_kind == "failed":
-        title_text = "挑战失败"
-        message_text = "失误次数已耗尽，重新挑战吧！"
-        button_text = "重新开始"
-        title_color = (190, 70, 70)
+    draw_scene_background("failed" if failed else "success")
 
-    elif current_level == len(LEVELS):
-        title_text = "全部通关！"
-        message_text = "你已经清除了所有关卡的箭头"
-        button_text = "从第一关再玩"
-        title_color = (45, 150, 95)
+    # 结果展示卡片
+    draw_panel(pygame.Rect(155, 90, 590, 485))
 
+    draw_centered_text(
+        "挑战结算",
+        info_font,
+        (115, 130, 150),
+        (WIDTH // 2, 115)
+    )
+
+    # 成功或失败徽章
+    center_x = WIDTH // 2
+    center_y = 185
+
+    badge_color = (255, 229, 233) if failed else (222, 246, 233)
+    symbol_color = (205, 75, 90) if failed else (45, 155, 110)
+
+    pygame.draw.circle(
+        screen, badge_color, (center_x, center_y), 46
+    )
+
+    if failed:
+        pygame.draw.line(
+            screen, symbol_color,
+            (center_x - 17, center_y - 17),
+            (center_x + 17, center_y + 17), 7
+        )
+        pygame.draw.line(
+            screen, symbol_color,
+            (center_x + 17, center_y - 17),
+            (center_x - 17, center_y + 17), 7
+        )
     else:
-        title_text = f"第 {current_level} 关通关"
-        message_text = "做得不错，继续挑战下一关吧！"
+        pygame.draw.lines(
+            screen, symbol_color, False,
+            [
+                (center_x - 22, center_y),
+                (center_x - 6, center_y + 16),
+                (center_x + 24, center_y - 18)
+            ],
+            7
+        )
+
+    if failed:
+        title = "挑战失败"
+        message = "暂时受阻，不代表不能成功"
+        tip = "先移走挡路箭头，再尝试被阻挡的箭头。"
+        button_text = "重新开始"
+    elif final_level:
+        title = "全部通关！"
+        message = "每一次判断，都让你离成功更近"
+        tip = "所有关卡已完成，可以从第一关再次挑战。"
+        button_text = "从第一关再玩"
+    else:
+        title = f"第 {current_level} 关通关"
+        message = "漂亮！棋盘已经清空"
+        tip = "准备好了吗？下一关还有新的挑战。"
         button_text = "下一关"
-        title_color = (45, 150, 95)
 
-    title = title_font.render(
-        title_text,
-        True,
-        title_color
+    draw_centered_text(
+        title, title_font, symbol_color,
+        (WIDTH // 2, 270)
     )
-    screen.blit(
-        title,
-        title.get_rect(center=(WIDTH // 2, 250))
+    draw_centered_text(
+        message, info_font, (100, 115, 135),
+        (WIDTH // 2, 320)
     )
 
-    message = button_font.render(
-        message_text,
-        True,
-        (45, 65, 85)
-    )
-    screen.blit(
-        message,
-        message.get_rect(center=(WIDTH // 2, 350))
+    # 展示真实的当前游戏数据
+    max_mistakes = LEVELS[current_level - 1]["mistakes"]
+    stats = [
+        ("当前关卡", f"{current_level} / {len(LEVELS)}"),
+        ("剩余箭头", str(len(arrows))),
+        ("剩余失误", f"{mistakes_left} / {max_mistakes}")
+    ]
+
+    for index, (label, value) in enumerate(stats):
+        rect = pygame.Rect(205 + index * 170, 365, 150, 82)
+
+        pygame.draw.rect(
+            screen, (242, 246, 251), rect,
+            border_radius=12
+        )
+
+        draw_centered_text(
+            label, info_font, (110, 125, 145),
+            (rect.centerx, 387)
+        )
+        draw_centered_text(
+            value, button_font, (50, 70, 95),
+            (rect.centerx, 418)
+        )
+
+    draw_centered_text(
+        tip, info_font, (105, 120, 140),
+        (WIDTH // 2, 520)
     )
 
     draw_restart_button(button_text)
