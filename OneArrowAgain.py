@@ -53,6 +53,10 @@ mistakes_left = 3
 # 当前被点击的箭头
 selected_arrow = None
 
+# 碰撞反馈状态
+collision_arrow = None
+collision_until = 0
+
 # 游戏界面状态
 START = "start"
 PLAYING = "playing"
@@ -122,8 +126,12 @@ def draw_arrow(arrow):
     right_x = base_x - perpendicular_x * 11
     right_y = base_y - perpendicular_y * 11
 
-    # 被选中的箭头显示为橙色
-    if arrow is selected_arrow:
+    # 碰撞时短暂显示红色
+    current_time = pygame.time.get_ticks()
+
+    if arrow is collision_arrow and current_time < collision_until:
+        arrow_color = (220, 70, 70)
+    elif arrow is selected_arrow:
         arrow_color = (240, 140, 50)
     else:
         arrow_color = (45, 95, 150)
@@ -272,14 +280,19 @@ while running:
                     if selected_arrow is not None:
                         blocked = is_blocked(selected_arrow, arrows)
 
-                        print(
-                            "点击箭头：",
-                            selected_arrow["row"],
-                            selected_arrow["col"],
-                            selected_arrow["direction"],
-                            "是否阻挡：",
-                            blocked
-                        )
+                        if blocked:
+                            mistakes_left = max(0, mistakes_left - 1)
+                            collision_arrow = selected_arrow
+                            collision_until = pygame.time.get_ticks() + 500
+
+                            print("发生碰撞，剩余失误：", mistakes_left)
+
+                        else:
+                            arrows.remove(selected_arrow)
+
+                            print("成功消除，剩余箭头：", len(arrows))
+
+                        selected_arrow = None
 
     # 根据当前状态绘制不同界面
     if game_state == START:
