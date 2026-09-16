@@ -116,6 +116,11 @@ OneArrowAgain/
 
 ![失败界面](assets/screenshot/failed.png)
 
+## 游戏演示
+
+[下载游戏演示视频（MP4）](assets/video/demo.mp4)
+
+
 ## 测试计划
 
 项目将重点测试以下内容：
