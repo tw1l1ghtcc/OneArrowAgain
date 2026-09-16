@@ -569,8 +569,190 @@ def draw_game_screen():
 
     draw_restart_button()
 
+def draw_all_clear_screen():
+    """绘制独立的全部通关庆祝页面"""
+    ticks = pygame.time.get_ticks()
+    gold = (255, 211, 105)
+    pale_gold = (255, 237, 185)
+
+    # 深蓝色渐变背景
+    top_color = (18, 28, 52)
+    bottom_color = (37, 56, 90)
+
+    for y in range(0, HEIGHT, 4):
+        ratio = y / (HEIGHT - 1)
+        color = tuple(
+            int(top_color[i] * (1 - ratio) + bottom_color[i] * ratio)
+            for i in range(3)
+        )
+        pygame.draw.rect(screen, color, (0, y, WIDTH, 4))
+
+    # 闪烁星点
+    for index in range(30):
+        x = (index * 173 + 35) % WIDTH
+        y = (index * 97 + 25) % HEIGHT
+        radius = 2 if (ticks // 500 + index) % 3 == 0 else 1
+
+        pygame.draw.circle(
+            screen, (155, 177, 213), (x, y), radius
+        )
+
+    # 缓慢飘落的彩纸
+    confetti_colors = [
+        gold,
+        (115, 205, 190),
+        (160, 175, 255),
+        (255, 155, 175)
+    ]
+
+    for index in range(36):
+        x = (index * 137 + 41) % WIDTH
+        y = (index * 89 + ticks // (15 + index % 6)) % HEIGHT
+
+        pygame.draw.rect(
+            screen,
+            confetti_colors[index % len(confetti_colors)],
+            (x, y, 7, 4),
+            border_radius=1
+        )
+
+    draw_centered_text(
+        "ONE ARROW AGAIN",
+        info_font,
+        (170, 189, 220),
+        (WIDTH // 2, 55)
+    )
+
+    # 奖杯背后的圆形光环
+    pygame.draw.circle(
+        screen, (43, 59, 88), (450, 205), 106
+    )
+    pygame.draw.circle(
+        screen, (111, 104, 83), (450, 205), 106, 2
+    )
+
+    # 奖杯两侧把手
+    pygame.draw.circle(screen, gold, (391, 180), 25, 8)
+    pygame.draw.circle(screen, gold, (509, 180), 25, 8)
+
+    # 奖杯杯身
+    pygame.draw.polygon(
+        screen,
+        gold,
+        [
+            (392, 145),
+            (508, 145),
+            (495, 213),
+            (474, 236),
+            (426, 236),
+            (405, 213)
+        ]
+    )
+
+    # 奖杯立柱和底座
+    pygame.draw.rect(
+        screen, gold, (444, 233, 12, 35),
+        border_radius=3
+    )
+    pygame.draw.rect(
+        screen, gold, (415, 266, 70, 10),
+        border_radius=4
+    )
+    pygame.draw.rect(
+        screen, gold, (402, 279, 96, 13),
+        border_radius=5
+    )
+
+    # 杯身上的星形
+    pygame.draw.polygon(
+        screen,
+        pale_gold,
+        [
+            (450, 160),
+            (456, 174),
+            (472, 174),
+            (460, 185),
+            (465, 200),
+            (450, 191),
+            (435, 200),
+            (440, 185),
+            (428, 174),
+            (444, 174)
+        ]
+    )
+
+    draw_centered_text(
+        "全关卡通关！",
+        title_font,
+        gold,
+        (WIDTH // 2, 345)
+    )
+    draw_centered_text(
+        "每一箭，都找到了出路",
+        button_font,
+        (229, 236, 249),
+        (WIDTH // 2, 400)
+    )
+
+    # 根据关卡数据显示完成信息，不虚构分数或用时
+    total_arrows = sum(
+        len(level["arrows"]) for level in LEVELS
+    )
+
+    badge = pygame.Rect(200, 440, 500, 46)
+    pygame.draw.rect(
+        screen, (45, 63, 96), badge,
+        border_radius=23
+    )
+    pygame.draw.rect(
+        screen, (145, 129, 87), badge,
+        width=1,
+        border_radius=23
+    )
+
+    draw_centered_text(
+        f"完成 {len(LEVELS)} 个关卡 · 清空关卡中的 {total_arrows} 枚箭头",
+        info_font,
+        pale_gold,
+        badge.center
+    )
+
+    draw_centered_text(
+        "再挑战一次，试试不同的消除顺序吧！",
+        info_font,
+        (175, 192, 218),
+        (WIDTH // 2, 535)
+    )
+
+    # 使用原来的按钮矩形，原有重玩事件仍然有效
+    hovered = restart_button.collidepoint(pygame.mouse.get_pos())
+    button_color = (255, 225, 145) if hovered else gold
+
+    pygame.draw.rect(
+        screen, (12, 21, 40),
+        restart_button.move(0, 5),
+        border_radius=15
+    )
+    pygame.draw.rect(
+        screen, button_color, restart_button,
+        border_radius=15
+    )
+
+    draw_centered_text(
+        "从第一关再玩",
+        button_font,
+        (45, 52, 72),
+        restart_button.center
+    )
+
+
 def draw_result_screen():
     """绘制丰富的通关或失败界面"""
+    # 最后一关通关时使用独立庆祝页面
+    if result_kind == "clear" and current_level == len(LEVELS):
+        draw_all_clear_screen()
+        return
+
     failed = result_kind == "failed"
     final_level = current_level == len(LEVELS)
 
